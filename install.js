@@ -21,7 +21,13 @@ export default async () => {
   if(ffmpeg.available){
     console.log(`[kempo-thumbs] Using ${ffmpeg.version}`);
   } else {
-    console.warn(`[kempo-thumbs] ffmpeg was not found (${ffmpeg.error}). Thumbnails will fail until it is installed, or until the ffmpeg_path setting points at it.`);
+    /*
+      ffmpeg-static is a real dependency now, so reaching this means its own npm install step
+      genuinely did not produce a usable binary — an unsupported platform/architecture, or
+      `npm install --ignore-scripts`, or an ffmpeg_path setting pointing at the wrong place. Worth
+      a loud warning specifically because it is no longer the expected case.
+    */
+    console.warn(`[kempo-thumbs] ffmpeg was not found (${ffmpeg.error}). It ships as a dependency of this extension, so this usually means either the platform is unsupported, install ran with --ignore-scripts, or the ffmpeg_path setting points somewhere wrong.`);
   }
 
   if(!ffprobe.available){

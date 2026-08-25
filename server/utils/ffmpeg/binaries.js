@@ -4,14 +4,22 @@ import { createRequire } from 'module';
 /*
   Finding ffmpeg, and running it without letting it hang the server.
 
-  Four places are checked in order, most explicit first: the setting, the environment, a bundled
-  static binary if one happens to be installed, and finally the bare name on PATH. The setting wins
-  because it is the only one a site admin can change without shell access — a shared host where
-  ffmpeg lives somewhere unusual is exactly the case that would otherwise need a redeploy.
+  Four places are checked in order, most explicit first: the setting, the environment, the bundled
+  binary, and finally the bare name on PATH. The setting wins because it is the only one a site
+  admin can change without shell access — a shared host where ffmpeg lives somewhere unusual is
+  exactly the case that would otherwise need a redeploy.
 
-  ffmpeg-static / ffprobe-static are *optional*: they are not declared as dependencies, because
-  they download a ~70MB binary in a postinstall script and most deployments already have ffmpeg.
-  If a site installs one, it is found and used; if not, nothing here notices.
+  ffmpeg-static and @ffprobe-installer/ffprobe are real dependencies, not optional extras: no
+  mainstream OS ships either binary (not Linux, not macOS, not Windows — including the node:alpine
+  base kempo's own Dockerfile uses), so leaving this to "found if a site happens to have installed
+  it" made the extension non-functional out of the box for essentially every real deployment. Both
+  packages read the actual platform they are being installed on at `npm install` time — a Linux
+  server gets a Linux binary, this is not a Windows-only shortcut — and both were confirmed working
+  on node:18-alpine specifically (musl libc, no libc6-compat needed) before being adopted here.
+
+  The bare-name-on-PATH fallback stays as the last resort for whatever the bundled packages cannot
+  cover — a platform/architecture combination outside their support matrix, or a site that ran
+  `npm install --ignore-scripts` and skipped ffmpeg-static's download.
 */
 
 const require = createRequire(import.meta.url);
@@ -20,8 +28,9 @@ const bundled = name => {
   try {
     const resolved = require(name);
     /*
-      ffmpeg-static default-exports the path as a string; ffprobe-static exports { path }. Both
-      shapes are handled rather than picked, since which one a site installed is not knowable here.
+      ffmpeg-static default-exports the path as a string; @ffprobe-installer/ffprobe exports
+      { path }. Both shapes are handled rather than picked, since either could in principle be
+      swapped for a differently-shaped package via the same require.
     */
     const path = typeof resolved === 'string' ? resolved : resolved?.path || resolved?.default;
     return typeof path === 'string' && path ? path : null;
@@ -34,7 +43,7 @@ export const resolveFfmpeg = configured =>
   configured || process.env.FFMPEG_PATH || bundled('ffmpeg-static') || 'ffmpeg';
 
 export const resolveFfprobe = configured =>
-  configured || process.env.FFPROBE_PATH || bundled('ffprobe-static') || 'ffprobe';
+  configured || process.env.FFPROBE_PATH || bundled('@ffprobe-installer/ffprobe') || 'ffprobe';
 
 /*
   A hard ceiling on how long any single ffmpeg invocation may take. A malformed or adversarial

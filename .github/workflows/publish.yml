@@ -78,12 +78,9 @@ jobs:
         run: npm install --no-save --no-legacy-peer-deps --force kempo@latest kempo-server@latest kempo-ui@latest
         working-directory: node_modules/kempo-files
 
-      # The render suite shells out to real ffmpeg and measures the pixels that come back. Without
-      # this it skips itself, which reads as a pass — and it is the only thing standing between a
-      # filter string that reads correctly and thumbnails that come out the wrong size.
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
+      # No system ffmpeg install step here on purpose — ffmpeg-static and @ffprobe-installer/ffprobe
+      # are real dependencies, installed above by npm ci, and this gate should prove that path works
+      # rather than mask it with a system package the published release will not actually rely on.
       - name: Apply database schema
         run: npx drizzle-kit push --force
 

@@ -61,30 +61,45 @@ settings are stored double-encoded and the generator sees nothing configured.
 
 ### ffmpeg
 
-ffmpeg and ffprobe have to be reachable from the server process. They are looked for in this order:
+**Nothing to install.** `ffmpeg-static` and `@ffprobe-installer/ffprobe` are real dependencies of
+this extension, so `npm install kempo-thumbs` gets you a working ffmpeg and ffprobe as part of that
+one command — no OS package manager step, no Dockerfile edit.
 
-1. The `ffmpeg_path` / `ffprobe_path` settings, if set
+That matters more than it sounds: no mainstream OS ships ffmpeg by default. Not Debian/Ubuntu, not
+Alpine (`node:18-alpine`, which is kempo's own reference Dockerfile), not macOS, not Windows — it is
+always an explicit install step, on every platform, including the exact base image kempo's own
+Dockerfile builds on. Both dependencies read the real platform at `npm install` time and fetch the
+matching binary — a Linux server gets a Linux binary, a Mac gets a Mac one — confirmed working on
+`node:18-alpine` specifically (true static linking, no `libc6-compat` needed for musl).
+
+The binary is looked for in this order:
+
+1. The `ffmpeg_path` / `ffprobe_path` settings, if set — for a specific system build, or an unusual
+   host layout
 2. The `FFMPEG_PATH` / `FFPROBE_PATH` environment variables
-3. `ffmpeg-static` / `ffprobe-static`, if the site happens to have installed them
-4. `ffmpeg` / `ffprobe` on `PATH`
+3. The `ffmpeg-static` / `@ffprobe-installer/ffprobe` dependency
+4. `ffmpeg` / `ffprobe` on `PATH` — the fallback for whatever step 3 cannot cover: a platform or
+   architecture outside its support matrix, or an install that ran with `npm install
+   --ignore-scripts`
 
-Neither static package is a dependency of this one — they download a ~70MB binary in a postinstall
-script, and most deployments already have ffmpeg. If a site installs one, it is found and used.
+If you do want the system's own ffmpeg instead — a specific build, a codec set the bundled binary
+doesn't include — point `ffmpeg_path` at it from the Settings tab, or install one the usual way and
+it is found via step 4:
 
 ```bash
 # Debian/Ubuntu
 apt-get install -y ffmpeg
 
-# Alpine (kempo's own Dockerfile is node:18-alpine)
+# Alpine
 apk add --no-cache ffmpeg
 
 # macOS
 brew install ffmpeg
 ```
 
-**ffprobe is optional.** Without it thumbnails are still generated, but their dimensions are not
-recorded — which means no `srcset`. The admin screen says so plainly rather than leaving you to
-work it out.
+**ffprobe missing is a lesser problem than ffmpeg missing.** Without it, thumbnails are still
+generated — only their dimensions go unrecorded, which means no `srcset`. The admin screen
+distinguishes the two: a red banner for no ffmpeg, a yellow one for no ffprobe.
 
 ---
 

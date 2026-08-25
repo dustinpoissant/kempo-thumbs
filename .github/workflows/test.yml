@@ -41,12 +41,10 @@ jobs:
         with:
           node-version: '22.x'
 
-      # The render and data-layer suites shell out to real ffmpeg and measure the pixels that come
-      # back. Without this they skip themselves, which reads as a pass — and they are the only thing
-      # covering the filter strings actually producing the right dimensions.
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
+      # No system ffmpeg install step here on purpose: ffmpeg-static and @ffprobe-installer/ffprobe
+      # are real dependencies of this package, so npm ci alone provides everything the render and
+      # data-layer suites need — which is also the real-world install path this is meant to prove
+      # works, not something CI should paper over with a system package.
       - run: npm ci
 
       # kempo/kempo-files/kempo-ui/kempo-server are peer dependencies, which npm ci does not install.
@@ -123,9 +121,7 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
+      # No system ffmpeg install step here either — see the same note in the published job above.
       - name: Install host
         run: npm ci && npm run link:local
         working-directory: kempo

@@ -69,10 +69,16 @@ images, video frames and embedded audio cover art rather than three libraries.
 - **EXIF is stripped from every thumbnail** (`-map_metadata -1`). A thumbnail is a derived file that
   tends to end up somewhere more public than its original; inheriting the GPS tag a phone photo
   carries is not a thing to do quietly.
-- **`ffmpeg-static` is supported but not depended on.** It downloads a ~70MB binary in a postinstall
-  script and most deployments already have ffmpeg — so it is looked for and used if present, and
-  nothing notices if it is not. Resolution order is setting, then environment variable, then bundled
-  package, then `PATH`.
+- **`ffmpeg-static` and `@ffprobe-installer/ffprobe` are real dependencies — `npm install
+  kempo-thumbs` alone gets you a working ffmpeg and ffprobe.** No mainstream OS ships either binary,
+  including the `node:18-alpine` base kempo's own Dockerfile builds on, so the original design
+  (look for a system install, do nothing if there isn't one) left the extension non-functional out
+  of the box for essentially every real deployment — confirmed on `node:18-alpine` specifically
+  (true static linking, no `libc6-compat` needed for musl) before adopting this. Both read the real
+  platform at `npm install` time and fetch the matching binary; a Linux server gets a Linux binary,
+  this is not tied to any one OS. Resolution order is setting, then environment variable, then the
+  dependency, then bare name on `PATH` — the last of which remains for a platform/architecture
+  outside their support matrix, or an install run with `--ignore-scripts`.
 - **The suite runs real ffmpeg against real files**, with sources synthesised by ffmpeg's own
   generators so there are no fixtures to keep current. That is what catches the class of bug where an
   argument string reads correctly and the pixels come out wrong — and it found two during
@@ -102,5 +108,5 @@ images, video frames and embedded audio cover art rather than three libraries.
   double-encoded on install and read back as JSON text, so the generator sees no configured sizes and
   silently produces nothing. `4.2.35` is enough for the dependency declaration itself, but not for
   the extension to actually work.
-- **ffmpeg** on the server. `ffprobe` is optional — thumbnails are still generated without it, but
-  their dimensions are not recorded, which means no `srcset`.
+- Nothing to install for ffmpeg itself — `ffmpeg-static` and `@ffprobe-installer/ffprobe` ship as
+  dependencies and fetch the right binary for the server's own platform at `npm install` time.
