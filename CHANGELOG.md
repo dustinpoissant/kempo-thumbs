@@ -79,6 +79,18 @@ images, video frames and embedded audio cover art rather than three libraries.
   this is not tied to any one OS. Resolution order is setting, then environment variable, then the
   dependency, then bare name on `PATH` — the last of which remains for a platform/architecture
   outside their support matrix, or an install run with `--ignore-scripts`.
+- **Found by this exact CI gate, on the first real attempt to publish it: every non-Windows
+  `@ffprobe-installer` platform package ships its binary non-executable and relies on its own
+  `postinstall` (`chmod u+x ffprobe`) to fix that** — and recent npm added a real `allowScripts`
+  allowlist that this package.json already used (for esbuild and puppeteer), which silently blocks
+  any lifecycle script for a package not named in it the moment the list exists at all. The result
+  was not an install failure — `npm ci` succeeded, ffmpeg generated the thumbnail fine — it was
+  ffprobe failing with a plain `Permission denied` and the row landing `ready` with no dimensions
+  instead of erroring loudly, on Linux only; Windows binaries need no executable bit, which is why
+  this was invisible in local testing. Fixed two ways: the missing platform packages were added to
+  `allowScripts`, and `resolveFfprobe`/`resolveFfmpeg` now `chmod` the resolved binary defensively
+  on every resolution, so neither this list nor any future `@ffprobe-installer` version bump can
+  silently reintroduce it.
 - **The suite runs real ffmpeg against real files**, with sources synthesised by ffmpeg's own
   generators so there are no fixtures to keep current. That is what catches the class of bug where an
   argument string reads correctly and the pixels come out wrong — and it found two during

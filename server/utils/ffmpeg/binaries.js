@@ -1,4 +1,5 @@
 import { execFile } from 'child_process';
+import { chmodSync } from 'fs';
 import { createRequire } from 'module';
 
 /*
@@ -33,7 +34,23 @@ const bundled = name => {
       swapped for a differently-shaped package via the same require.
     */
     const path = typeof resolved === 'string' ? resolved : resolved?.path || resolved?.default;
-    return typeof path === 'string' && path ? path : null;
+    if(typeof path !== 'string' || !path) return null;
+
+    /*
+      Every non-Windows @ffprobe-installer platform package ships its binary without the executable
+      bit set and relies on its own postinstall (`chmod u+x ffprobe`) to add it. Recent npm added a
+      real allowScripts allowlist — package.json already carries one, for esbuild and puppeteer —
+      and the moment that list exists at all, any lifecycle script for a package not named in it is
+      silently skipped rather than run. Missing one entry here (found via a real CI failure: ffmpeg
+      generated the thumbnail fine, ffprobe then failed with a plain 'Permission denied', and the
+      row landed with no dimensions instead of erroring loudly) means a binary sitting right there
+      on disk that nothing can execute. Redoing the chmod here removes the dependency on that list
+      being kept in sync at all — a future @ffprobe-installer platform or version bump can't
+      reintroduce this silently. A no-op on Windows, and harmless if the bit was already set.
+    */
+    try { chmodSync(path, 0o755); } catch { /* best effort — the exec below reports clearly if this mattered */ }
+
+    return path;
   } catch {
     return null;
   }

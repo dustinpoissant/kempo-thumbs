@@ -40,6 +40,12 @@
     "postgres": "^3.4.9"
   },
   "allowScripts": {
+    "@ffprobe-installer/darwin-arm64@5.0.1": true,
+    "@ffprobe-installer/darwin-x64@5.1.0": true,
+    "@ffprobe-installer/linux-arm@5.2.0": true,
+    "@ffprobe-installer/linux-arm64@5.2.0": true,
+    "@ffprobe-installer/linux-ia32@5.2.0": true,
+    "@ffprobe-installer/linux-x64@5.2.0": true,
     "esbuild@0.18.20": true,
     "esbuild@0.25.12": true,
     "esbuild@0.28.2": true,
