@@ -1,7 +1,7 @@
 {
   "name": "kempo-thumbs",
-  "version": "0.1.0",
-  "description": "Automatic thumbnail generation for kempo-files \u2014 ffmpeg-backed, for images, video and audio",
+  "version": "0.1.1",
+  "description": "Automatic thumbnail generation for kempo-files — ffmpeg-backed, for images, video and audio",
   "license": "MIT",
   "author": "Dustin Poissant",
   "type": "module",
