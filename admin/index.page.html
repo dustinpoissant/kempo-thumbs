@@ -83,25 +83,6 @@ locked: true
             </label>
           </div>
 
-          <details class="mb">
-            <summary>ffmpeg location</summary>
-            <p class="small tc-muted">
-              Leave both blank to auto-detect: the <code>FFMPEG_PATH</code>/<code>FFPROBE_PATH</code>
-              environment variables, then a bundled <code>ffmpeg-static</code> if one is installed,
-              then whatever is on the server's <code>PATH</code>.
-            </p>
-            <div class="d-f" style="gap: var(--spacer);">
-              <label class="d-b flex">
-                <span class="small tc-muted d-b">ffmpeg</span>
-                <input type="text" id="ffmpegPath" placeholder="ffmpeg" />
-              </label>
-              <label class="d-b flex">
-                <span class="small tc-muted d-b">ffprobe</span>
-                <input type="text" id="ffprobePath" placeholder="ffprobe" />
-              </label>
-            </div>
-          </details>
-
           <div class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
             <button type="submit" class="primary" id="save">Save settings</button>
             <span class="small tc-muted" id="saveNote"></span>
@@ -207,8 +188,6 @@ locked: true
       $('quality').value = settings.quality;
       $('videoFrameSeconds').value = settings.videoFrameSeconds;
       $('concurrency').value = settings.concurrency;
-      $('ffmpegPath').value = settings.ffmpegPath;
-      $('ffprobePath').value = settings.ffprobePath;
 
       // PNG is lossless, so the number would do nothing — hiding it beats explaining it.
       $('qualityField').style.display = settings.outputFormat === 'png' ? 'none' : '';
@@ -249,8 +228,6 @@ locked: true
           quality: Number($('quality').value),
           video_frame_seconds: Number($('videoFrameSeconds').value),
           concurrency: Number($('concurrency').value),
-          ffmpeg_path: $('ffmpegPath').value,
-          ffprobe_path: $('ffprobePath').value,
         });
 
         $('save').disabled = false;

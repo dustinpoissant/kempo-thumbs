@@ -61,54 +61,27 @@ settings are stored double-encoded and the generator sees nothing configured.
 
 ### ffmpeg
 
-**Nothing to install.** `ffmpeg-static` and `@ffprobe-installer/ffprobe` are real dependencies of
-this extension, so `npm install kempo-thumbs` gets you a working ffmpeg and ffprobe as part of that
-one command — no OS package manager step, no Dockerfile edit.
+**Nothing to install, nothing to configure.** `ffmpeg-static` and `@ffprobe-installer/ffprobe` are
+real dependencies, so `npm install kempo-thumbs` gets you a working ffmpeg and ffprobe as part of
+that one command — no OS package manager step, no Dockerfile edit, no settings screen to point at
+one. Both read the real platform at `npm install` time and fetch the matching binary — a Linux
+server gets a Linux binary, a Mac gets a Mac one — confirmed working on `node:18-alpine` (kempo's
+own reference Dockerfile base) specifically: true static linking, no `libc6-compat` needed for musl.
 
-That matters more than it sounds: no mainstream OS ships ffmpeg by default. Not Debian/Ubuntu, not
-Alpine (`node:18-alpine`, which is kempo's own reference Dockerfile), not macOS, not Windows — it is
-always an explicit install step, on every platform, including the exact base image kempo's own
-Dockerfile builds on. Both dependencies read the real platform at `npm install` time and fetch the
-matching binary — a Linux server gets a Linux binary, a Mac gets a Mac one — confirmed working on
-`node:18-alpine` specifically (true static linking, no `libc6-compat` needed for musl).
-
-The binary is looked for in this order:
-
-1. The `ffmpeg_path` / `ffprobe_path` settings, if set — for a specific system build, or an unusual
-   host layout
-2. The `FFMPEG_PATH` / `FFPROBE_PATH` environment variables
-3. The `ffmpeg-static` / `@ffprobe-installer/ffprobe` dependency
-4. `ffmpeg` / `ffprobe` on `PATH` — the fallback for whatever step 3 cannot cover: a platform or
-   architecture outside its support matrix, or an install that ran with `npm install
-   --ignore-scripts`
-
-If you do want the system's own ffmpeg instead — a specific build, a codec set the bundled binary
-doesn't include — point `ffmpeg_path` at it from the Settings tab, or install one the usual way and
-it is found via step 4:
-
-```bash
-# Debian/Ubuntu
-apt-get install -y ffmpeg
-
-# Alpine
-apk add --no-cache ffmpeg
-
-# macOS
-brew install ffmpeg
-```
-
-**ffprobe missing is a lesser problem than ffmpeg missing.** Without it, thumbnails are still
-generated — only their dimensions go unrecorded, which means no `srcset`. The admin screen
-distinguishes the two: a red banner for no ffmpeg, a yellow one for no ffprobe.
+`FFMPEG_PATH` / `FFPROBE_PATH` environment variables still override this, for the one case that
+remains genuinely uncommon — a platform or architecture outside the bundled packages' support
+matrix, or a container image that stages a specific build at a fixed path. There is no settings-UI
+equivalent: the dependency is the ffmpeg this extension uses, not a default some site is expected to
+redirect.
 
 ---
 
 ## The admin screen
 
-**Admin → Thumbnails** is three tabs: **Manage** (ffmpeg status, counts, the bulk actions below),
-**Settings**, and **Recent activity**. A tab you lack permission for is not just empty — it does not
-appear in the tab strip at all, so `thumbs:generate` without `thumbs:settings` (the
-`kempo-thumbs:operator` group's own shape) never even shows a Settings tab to click.
+**Admin → Thumbnails** is three tabs: **Manage** (counts and the bulk actions below), **Settings**,
+and **Recent activity**. A tab you lack permission for is not just empty — it does not appear in the
+tab strip at all, so `thumbs:generate` without `thumbs:settings` (the `kempo-thumbs:operator`
+group's own shape) never even shows a Settings tab to click.
 
 That's `k-permission-target` (kempo core, alongside `k-permission`) rather than a permission wrapper
 around the tab itself. kempo-ui's `<k-tabs>` finds its `<k-tab>`/`<k-tab-content>` by direct-child
@@ -134,7 +107,6 @@ array of sizes in a one-line text field is not something anyone should have to e
 | `quality` | `82` | 1–100. Ignored for png, which is lossless. |
 | `video_frame_seconds` | `1` | How far into a video the captured frame comes from. |
 | `concurrency` | `2` | How many files may be processed at once. |
-| `ffmpeg_path` / `ffprobe_path` | blank | Blank auto-detects, as above. |
 
 ### Sizes
 

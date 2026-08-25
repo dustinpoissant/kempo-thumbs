@@ -35,7 +35,7 @@ const OWNER = 'test-owner-thumbs';
 const PREFIX = 'zz-test-';
 
 const databaseReachable = await db.execute(sql`select 1`).then(() => true).catch(() => false);
-const ffmpeg = resolveFfmpeg('');
+const ffmpeg = resolveFfmpeg();
 const ffmpegAvailable = (await checkBinary(ffmpeg)).available;
 
 const skipped = reason => ({
@@ -56,8 +56,6 @@ const config = (over = {}) => ({
   quality: 82,
   videoFrameSeconds: 1,
   concurrency: 1,
-  ffmpegPath: '',
-  ffprobePath: '',
   ...over,
 });
 

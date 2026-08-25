@@ -62,23 +62,23 @@ images, video frames and embedded audio cover art rather than three libraries.
   everything* (after a change that alters how thumbnails look rather than which exist), and *Clean up
   orphans* (rows whose source is gone — a repair for what happened before the `file:deleted` hook
   existed).
-- **The admin screen leads with whether ffmpeg is actually reachable.** Every other symptom of a
-  missing binary looks like "thumbnails just aren't appearing", and the true cause is invisible from
-  anywhere else in the admin. The check runs a real `-version`, because "the file is there" and "it
-  runs on this machine" are different claims.
 - **EXIF is stripped from every thumbnail** (`-map_metadata -1`). A thumbnail is a derived file that
   tends to end up somewhere more public than its original; inheriting the GPS tag a phone photo
   carries is not a thing to do quietly.
-- **`ffmpeg-static` and `@ffprobe-installer/ffprobe` are real dependencies — `npm install
-  kempo-thumbs` alone gets you a working ffmpeg and ffprobe.** No mainstream OS ships either binary,
-  including the `node:18-alpine` base kempo's own Dockerfile builds on, so the original design
-  (look for a system install, do nothing if there isn't one) left the extension non-functional out
-  of the box for essentially every real deployment — confirmed on `node:18-alpine` specifically
-  (true static linking, no `libc6-compat` needed for musl) before adopting this. Both read the real
-  platform at `npm install` time and fetch the matching binary; a Linux server gets a Linux binary,
-  this is not tied to any one OS. Resolution order is setting, then environment variable, then the
-  dependency, then bare name on `PATH` — the last of which remains for a platform/architecture
-  outside their support matrix, or an install run with `--ignore-scripts`.
+- **`ffmpeg-static` and `@ffprobe-installer/ffprobe` are real dependencies, with no admin-facing
+  path setting and no "is it installed" banner — `npm install kempo-thumbs` alone gets you a
+  working ffmpeg and ffprobe, guaranteed.** No mainstream OS ships either binary, including the
+  `node:18-alpine` base kempo's own Dockerfile builds on, so the original design (look for a system
+  install, do nothing if there isn't one — and, for one release, a settings-configurable override
+  and a live admin banner for when it wasn't found) left the extension non-functional out of the box
+  for essentially every real deployment, while treating a solvable problem as something each site
+  had to notice and work around. Confirmed on `node:18-alpine` specifically (true static linking, no
+  `libc6-compat` needed for musl) before adopting this. Both packages read the real platform at
+  `npm install` time and fetch the matching binary; a Linux server gets a Linux binary, this is not
+  tied to any one OS. `FFMPEG_PATH`/`FFPROBE_PATH` environment variables remain as a pure code-level
+  override — no settings UI, no database row — for the one case that is still genuinely uncommon: a
+  platform/architecture outside the bundled packages' support matrix, or a container staging a
+  specific build at a fixed path. Below that, the bare name on `PATH` is the last resort.
 - **Found by this exact CI gate, on the first real attempt to publish it: every non-Windows
   `@ffprobe-installer` platform package ships its binary non-executable and relies on its own
   `postinstall` (`chmod u+x ffprobe`) to fix that** — and recent npm added a real `allowScripts`

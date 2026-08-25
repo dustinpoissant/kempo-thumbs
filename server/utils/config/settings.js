@@ -31,8 +31,6 @@ export const DEFAULTS = {
   quality: 82,
   video_frame_seconds: 1,
   concurrency: 2,
-  ffmpeg_path: '',
-  ffprobe_path: '',
 };
 
 /*
@@ -131,7 +129,6 @@ export const readConfig = async () => {
   const [
     autoGenerate, formats, sizes, destination,
     outputFormat, quality, videoFrameSeconds, concurrency,
-    ffmpegPath, ffprobePath,
   ] = await Promise.all([
     read('auto_generate', DEFAULTS.auto_generate),
     read('formats', DEFAULTS.formats),
@@ -141,8 +138,6 @@ export const readConfig = async () => {
     read('quality', DEFAULTS.quality),
     read('video_frame_seconds', DEFAULTS.video_frame_seconds),
     read('concurrency', DEFAULTS.concurrency),
-    read('ffmpeg_path', DEFAULTS.ffmpeg_path),
-    read('ffprobe_path', DEFAULTS.ffprobe_path),
   ]);
 
   return {
@@ -154,7 +149,5 @@ export const readConfig = async () => {
     quality: clampNumber(quality, { min: 1, max: 100, fallback: DEFAULTS.quality }),
     videoFrameSeconds: Math.max(0, Number(videoFrameSeconds) || 0),
     concurrency: clampNumber(concurrency, { min: 1, max: 8, fallback: DEFAULTS.concurrency }),
-    ffmpegPath: typeof ffmpegPath === 'string' ? ffmpegPath.trim() : '',
-    ffprobePath: typeof ffprobePath === 'string' ? ffprobePath.trim() : '',
   };
 };

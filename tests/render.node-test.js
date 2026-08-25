@@ -18,8 +18,8 @@ import { renderThumbnail, probeDimensions } from '../server/utils/ffmpeg/render.
   where it counts.
 */
 
-const ffmpeg = resolveFfmpeg('');
-const ffprobe = resolveFfprobe('');
+const ffmpeg = resolveFfmpeg();
+const ffprobe = resolveFfprobe();
 
 const available = await checkBinary(ffmpeg);
 const probeAvailable = await checkBinary(ffprobe);

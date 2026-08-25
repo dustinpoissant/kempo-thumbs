@@ -106,23 +106,14 @@ export default {
       saves the screen without editing anything — which looks like a bug in whatever they *did*
       change.
     */
-    const camel = {
-      auto_generate: 'auto_generate',
-      output_format: 'output_format',
-      video_frame_seconds: 'video_frame_seconds',
-      ffmpeg_path: 'ffmpeg_path',
-      ffprobe_path: 'ffprobe_path',
-    };
-
     const mismatched = [];
     for(const setting of config.settings){
-      const key = camel[setting.name] || setting.name;
-      if(!(key in DEFAULTS)){
+      if(!(setting.name in DEFAULTS)){
         mismatched.push(`${setting.name} has no fallback in DEFAULTS`);
         continue;
       }
 
-      const fallback = DEFAULTS[key];
+      const fallback = DEFAULTS[setting.name];
       const stored = setting.type === 'json'
         ? JSON.parse(setting.value)
         : setting.type === 'number' ? Number(setting.value)

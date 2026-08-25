@@ -26,7 +26,7 @@ import { requireSession, requirePermission } from '../../../server/utils/permiss
 */
 export const SAVEABLE = [
   'auto_generate', 'formats', 'sizes', 'destination', 'output_format',
-  'quality', 'video_frame_seconds', 'concurrency', 'ffmpeg_path', 'ffprobe_path',
+  'quality', 'video_frame_seconds', 'concurrency',
 ];
 
 export default async (request, response) => {
@@ -88,11 +88,6 @@ export default async (request, response) => {
     updates[name] = value;
   }
 
-  for(const name of ['ffmpeg_path', 'ffprobe_path']){
-    if(body[name] === undefined) continue;
-    updates[name] = String(body[name]).trim();
-  }
-
   if(!Object.keys(updates).length){
     return response.status(400).json({ error: 'Nothing to save' });
   }
@@ -106,9 +101,7 @@ export default async (request, response) => {
       setSetting stores exactly what it is handed, so passing null for the description would erase
       the text kempo's own /admin/settings screen shows next to each of these.
 
-      isPublic stays false throughout. None of these are needed by a page render, and ffmpeg_path in
-      particular is a filesystem path on the server — not something to publish at
-      /kempo/api/settings/public.
+      isPublic stays false throughout — none of these are needed by a page render.
     */
     const [error] = await setSetting(OWNER, name, value, typeOf(name), false, descriptionOf(name));
     if(error) return response.status(error.code).json({ error: error.msg });

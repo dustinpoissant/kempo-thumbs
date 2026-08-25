@@ -62,18 +62,6 @@
       "value": "2",
       "type": "number",
       "description": "How many files may be processed at once. Each one runs an ffmpeg process per size"
-    },
-    {
-      "name": "ffmpeg_path",
-      "value": "",
-      "type": "string",
-      "description": "Path to the ffmpeg binary. Blank auto-detects: FFMPEG_PATH, then the ffmpeg-static dependency, then ffmpeg on PATH"
-    },
-    {
-      "name": "ffprobe_path",
-      "value": "",
-      "type": "string",
-      "description": "Path to the ffprobe binary. Blank auto-detects: FFPROBE_PATH, then the @ffprobe-installer/ffprobe dependency, then ffprobe on PATH"
     }
   ],
   "groups": [

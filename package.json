@@ -14,8 +14,6 @@
     "public-scope": "kempo-thumbs"
   },
   "exports": {
-    "./install": "./install.js",
-    "./update": "./update.js",
     "./uninstall": "./uninstall.js",
     "./sdk": "./sdk.js"
   },

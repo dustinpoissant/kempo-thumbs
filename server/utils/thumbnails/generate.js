@@ -142,8 +142,8 @@ export const generateForFile = async ({ fileId, force = false, config: given = n
   });
   if(destinationError) return [destinationError, null];
 
-  const ffmpeg = resolveFfmpeg(config.ffmpegPath);
-  const ffprobe = resolveFfprobe(config.ffprobePath);
+  const ffmpeg = resolveFfmpeg();
+  const ffprobe = resolveFfprobe();
   const kind = kindForName(file.name);
 
   const results = [];

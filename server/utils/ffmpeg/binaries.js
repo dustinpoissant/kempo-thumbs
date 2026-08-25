@@ -3,24 +3,18 @@ import { chmodSync } from 'fs';
 import { createRequire } from 'module';
 
 /*
-  Finding ffmpeg, and running it without letting it hang the server.
+  Finding ffmpeg. ffmpeg-static and @ffprobe-installer/ffprobe are real dependencies — no mainstream
+  OS ships either binary (not Linux, not macOS, not Windows — including the node:alpine base kempo's
+  own Dockerfile uses), so this extension needs them regardless. Both packages read the actual
+  platform they are being installed on at `npm install` time and fetch the matching binary — a
+  Linux server gets a Linux binary — confirmed working on node:18-alpine specifically (musl libc, no
+  libc6-compat needed) before being adopted here. There is deliberately no setting for this: the
+  dependency *is* the ffmpeg this extension uses, not a suggestion a site might need to override.
 
-  Four places are checked in order, most explicit first: the setting, the environment, the bundled
-  binary, and finally the bare name on PATH. The setting wins because it is the only one a site
-  admin can change without shell access — a shared host where ffmpeg lives somewhere unusual is
-  exactly the case that would otherwise need a redeploy.
-
-  ffmpeg-static and @ffprobe-installer/ffprobe are real dependencies, not optional extras: no
-  mainstream OS ships either binary (not Linux, not macOS, not Windows — including the node:alpine
-  base kempo's own Dockerfile uses), so leaving this to "found if a site happens to have installed
-  it" made the extension non-functional out of the box for essentially every real deployment. Both
-  packages read the actual platform they are being installed on at `npm install` time — a Linux
-  server gets a Linux binary, this is not a Windows-only shortcut — and both were confirmed working
-  on node:18-alpine specifically (musl libc, no libc6-compat needed) before being adopted here.
-
-  The bare-name-on-PATH fallback stays as the last resort for whatever the bundled packages cannot
-  cover — a platform/architecture combination outside their support matrix, or a site that ran
-  `npm install --ignore-scripts` and skipped ffmpeg-static's download.
+  Two things can still legitimately move it: the environment, for a platform/architecture outside
+  the bundled packages' support matrix, or a container image that stages a specific build at a fixed
+  path; and the bare name on PATH, the last resort for whatever neither of those covers — including
+  an install that ran with `--ignore-scripts` and skipped ffmpeg-static's own download.
 */
 
 const require = createRequire(import.meta.url);
@@ -56,11 +50,11 @@ const bundled = name => {
   }
 };
 
-export const resolveFfmpeg = configured =>
-  configured || process.env.FFMPEG_PATH || bundled('ffmpeg-static') || 'ffmpeg';
+export const resolveFfmpeg = () =>
+  process.env.FFMPEG_PATH || bundled('ffmpeg-static') || 'ffmpeg';
 
-export const resolveFfprobe = configured =>
-  configured || process.env.FFPROBE_PATH || bundled('@ffprobe-installer/ffprobe') || 'ffprobe';
+export const resolveFfprobe = () =>
+  process.env.FFPROBE_PATH || bundled('@ffprobe-installer/ffprobe') || 'ffprobe';
 
 /*
   A hard ceiling on how long any single ffmpeg invocation may take. A malformed or adversarial
@@ -97,8 +91,9 @@ export const run = (binary, args, { timeout = DEFAULT_TIMEOUT_MS, maxBuffer = 4 
   });
 
 /*
-  Whether the binaries are actually there, for the admin screen to say so before someone uploads a
-  hundred files and wonders why every one of them failed.
+  Whether a binary is actually reachable and runs. Not part of the normal request path — the
+  dependency is expected to just work — but worth having for the test suite to check before
+  deciding whether to run its real-ffmpeg cases or skip them.
 */
 export const checkBinary = async binary => {
   const [error, result] = await run(binary, ['-version'], { timeout: 10_000 });

@@ -5,12 +5,7 @@ import { html, css } from '/kempo-ui/lit-all.min.js';
 import { getStatus } from '/kempo-thumbs/sdk.js';
 
 /*
-  Whether this extension is actually working, and what it is doing right now.
-
-  The ffmpeg banner is the reason this component exists. Everything else about a misconfigured
-  install looks like "thumbnails just aren't appearing", and the true cause — a binary that is not
-  on the server — is invisible from anywhere else in the admin. Saying it plainly at the top of the
-  screen is worth more than the counts below it.
+  What this extension is doing right now: how many thumbnails are in each state, and the queue.
 
   Polls only while there is something in flight. A settings screen sitting open on an idle site
   should not be making a request every two seconds forever.
@@ -63,41 +58,6 @@ export default class Status extends ShadowComponent {
     }
   };
 
-  renderFfmpeg(){
-    const { ffmpeg, ffprobe } = this._status;
-
-    if(!ffmpeg.available){
-      return html`
-        <div class="banner error">
-          <k-icon name="error"></k-icon>
-          <div>
-            <strong>ffmpeg was not found.</strong>
-            No thumbnails can be generated until it is installed on the server, or until the ffmpeg
-            path below points at it.
-            <span class="small d-b tc-muted">Tried <code>${ffmpeg.path}</code> — ${ffmpeg.error}</span>
-          </div>
-        </div>
-      `;
-    }
-
-    if(!ffprobe.available){
-      return html`
-        <div class="banner warn">
-          <k-icon name="warning"></k-icon>
-          <div>
-            <strong>ffprobe was not found.</strong>
-            Thumbnails are still generated, but their dimensions are not recorded — which means no
-            <code>srcset</code>.
-          </div>
-        </div>
-      `;
-    }
-
-    return html`
-      <p class="small tc-muted mb0"><k-icon name="check_circle"></k-icon> ${ffmpeg.version}</p>
-    `;
-  }
-
   renderCount(label, value, tone = ''){
     return html`
       <div class="count ${tone}">
@@ -114,8 +74,6 @@ export default class Status extends ShadowComponent {
     const working = queue.queued + queue.active > 0;
 
     return html`
-      ${this.renderFfmpeg()}
-
       <div class="counts">
         ${this.renderCount('ready', counts.ready)}
         ${this.renderCount('pending', counts.pending)}
@@ -148,20 +106,6 @@ export default class Status extends ShadowComponent {
 
   static styles = css`
     :host { display: block; }
-
-    .banner {
-      display: flex;
-      gap: var(--spacer_h);
-      align-items: flex-start;
-      padding: var(--spacer_h);
-      margin-bottom: var(--spacer);
-      border-radius: var(--radius);
-      border: 1px solid currentColor;
-    }
-    /* Literal colors rather than kempo-css utilities: every utility there is !important, so a
-       class would win over anything this component's own rules try to say afterwards. */
-    .banner.error { color: var(--c_danger); }
-    .banner.warn { color: var(--c_warning); }
 
     .counts { display: flex; flex-wrap: wrap; gap: var(--spacer); margin-bottom: var(--spacer); }
     .count { display: flex; flex-direction: column; }
