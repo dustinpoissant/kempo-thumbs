@@ -55,9 +55,9 @@ Then enable it from the admin's Extensions screen. `kempo-files` has to be insta
 first — it is declared as a dependency, so kempo refuses the install until it is, and refuses to
 disable or uninstall kempo-files while this is still enabled.
 
-Needs `kempo >= 4.2.37`, `kempo-files >= 0.1.3` and `kempo-server >= 3.3.0`. Below the first of
-those, the `sizes` and `formats` settings are stored double-encoded and the generator sees nothing
-configured.
+Needs `kempo >= 4.2.39` (for `k-permission-target`, which the admin screen's tabs use),
+`kempo-files >= 0.1.3` and `kempo-server >= 3.3.0`. Below `4.2.37`, the `sizes` and `formats`
+settings are stored double-encoded and the generator sees nothing configured.
 
 ### ffmpeg
 
@@ -88,9 +88,24 @@ work it out.
 
 ---
 
+## The admin screen
+
+**Admin → Thumbnails** is three tabs: **Manage** (ffmpeg status, counts, the bulk actions below),
+**Settings**, and **Recent activity**. A tab you lack permission for is not just empty — it does not
+appear in the tab strip at all, so `thumbs:generate` without `thumbs:settings` (the
+`kempo-thumbs:operator` group's own shape) never even shows a Settings tab to click.
+
+That's `k-permission-target` (kempo core, alongside `k-permission`) rather than a permission wrapper
+around the tab itself. kempo-ui's `<k-tabs>` finds its `<k-tab>`/`<k-tab-content>` by direct-child
+query, so wrapping one — the way `k-permission` normally wraps content — breaks tab selection
+outright, not just the display. `k-permission-target` reaches in by id from outside `<k-tabs>` and
+hides the tab and its pane in place, leaving both exactly where `<k-tabs>` expects to find them. As
+everywhere else in this admin: the real boundary is the route, not the tab strip — this is a
+courtesy.
+
 ## Settings
 
-All of it is on one screen: **Admin → Thumbnails**. They are ordinary kempo settings, so they also
+All of it is on one screen: the **Settings** tab. They are ordinary kempo settings, so they also
 appear under `/admin/settings` grouped by owner — the dedicated screen exists because a nested JSON
 array of sizes in a one-line text field is not something anyone should have to edit.
 

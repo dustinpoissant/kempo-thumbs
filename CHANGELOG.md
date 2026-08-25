@@ -84,14 +84,23 @@ images, video frames and embedded audio cover art rather than three libraries.
   default matching the code's own fallback. This is the shape of bug kempo-blog shipped, where a
   permission check against a name nobody registered silently denied everyone who was not an
   administrator.
+- **The admin screen is three tabs** — Manage, Settings, Recent activity — rather than three
+  permission-gated sections stacked on one page. A tab someone lacks permission for does not appear
+  in the strip at all, using a new kempo core component built for exactly this: `k-permission-target`
+  (`kempo/components/PermissionTarget.js`), a sibling to `k-permission` that hides *other* elements
+  by selector instead of wrapping its own children. kempo-ui's `<k-tabs>` finds its `<k-tab>`/
+  `<k-tab-content>` with a direct-child query, so a `k-permission`-style wrapper around a `<k-tab>`
+  would break tab selection outright, not just hide it — `k-permission-target` reaches in from
+  outside `<k-tabs>` instead, leaving the tab and its pane exactly where `<k-tabs>` expects them.
 
 ### Requires
 
 - `kempo-files >= 0.1.3` for the `file:deleted` hook (added alongside this release). Without it
   thumbnails outlive their sources until *Clean up orphans* is run.
-- `kempo >= 4.2.37` for the json-settings fix. Below that, this extension's `sizes` and `formats`
-  are stored double-encoded on install and read back as JSON text, so the generator sees no
-  configured sizes and silently produces nothing. 4.2.35 is enough for the dependency declaration
-  itself, but not for the extension to actually work.
+- `kempo >= 4.2.39` for `k-permission-target`, which the admin screen's tabs use. `4.2.37` fixes the
+  json-settings double-encoding bug; below it, this extension's `sizes` and `formats` are stored
+  double-encoded on install and read back as JSON text, so the generator sees no configured sizes and
+  silently produces nothing. `4.2.35` is enough for the dependency declaration itself, but not for
+  the extension to actually work.
 - **ffmpeg** on the server. `ffprobe` is optional — thumbnails are still generated without it, but
   their dimensions are not recorded, which means no `srcset`.

@@ -3,121 +3,138 @@ locked: true
 -->
 <page title="Thumbnails - Admin">
 <content>
-  <script type="module" src="/kempo/components/Permission.js"></script>
+  <script type="module" src="/kempo/components/PermissionTarget.js"></script>
+  <script type="module" src="/kempo-ui/components/Tabs.js"></script>
   <script type="module" src="/kempo-ui/components/Table.js"></script>
   <script type="module" src="/kempo-ui/components/Toggle.js"></script>
   <script type="module" src="/admin/extension/kempo-thumbs/components/Status.js"></script>
   <script type="module" src="/admin/extension/kempo-thumbs/components/SizeList.js"></script>
   <script type="module" src="/admin/extension/kempo-thumbs/components/FormatPicker.js"></script>
 
-  <div class="p">
+  <div>
     <h1>Thumbnails</h1>
     <p class="tc-muted">
       Generated automatically from files in the library, with ffmpeg. Images are decoded, videos
       give up a frame, and audio files contribute their cover art if they carry one.
     </p>
 
-    <k-permission has="thumbs:view">
-      <k-thumbs-status id="status"></k-thumbs-status>
-    </k-permission>
+    <k-tabs id="tabs" active="manage" persistent-id="kempo-thumbs-admin-tab">
+      <k-tab id="manageTab" for="manage">Manage</k-tab>
+      <k-tab id="settingsTab" for="settings">Settings</k-tab>
+      <k-tab id="activityTab" for="activity">Recent activity</k-tab>
 
-    <k-permission has="thumbs:settings">
-      <form id="settings" class="mt">
-        <h2>What gets a thumbnail</h2>
+      <k-tab-content id="manageContent" name="manage">
+        <k-thumbs-status id="status"></k-thumbs-status>
+      </k-tab-content>
 
-        <label class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
-          <k-toggle id="autoGenerate"></k-toggle>
-          <span>
+      <k-tab-content id="settingsContent" name="settings">
+        <form id="settings">
+          <h2>What gets a thumbnail</h2>
+
+          <k-toggle id="autoGenerate">
             Generate automatically on upload
             <span class="small tc-muted d-b">
               With this off, thumbnails are only made when asked for from this screen.
             </span>
-          </span>
-        </label>
+          </k-toggle>
 
-        <k-thumbs-format-picker id="formats"></k-thumbs-format-picker>
+          <k-thumbs-format-picker id="formats" class="mb"></k-thumbs-format-picker>
 
-        <h2>Sizes</h2>
-        <p class="small tc-muted">
-          One file is generated per size, per source file. <strong>Cover</strong> fills the box
-          exactly and crops the overflow; <strong>contain</strong> fits the whole image inside it and
-          never scales anything up; <strong>pad</strong> does the same and pads out to the full box.
-        </p>
-        <k-thumbs-size-list id="sizes"></k-thumbs-size-list>
-
-        <h2>Where they go</h2>
-        <label class="d-b mb">
-          <span class="small tc-muted d-b">Folder, relative to the file being thumbnailed</span>
-          <input type="text" id="destination" placeholder="thumbs" />
-        </label>
-        <p class="small tc-muted" id="destinationExample"></p>
-
-        <h2>How they are encoded</h2>
-        <div class="d-f mb" style="gap: var(--spacer); align-items: flex-end;">
-          <label class="d-b">
-            <span class="small tc-muted d-b">Format</span>
-            <select id="outputFormat">
-              <option value="webp">WebP — smallest, keeps transparency</option>
-              <option value="jpg">JPEG — widest support, no transparency</option>
-              <option value="png">PNG — lossless, largest</option>
-            </select>
-          </label>
-
-          <label class="d-b" id="qualityField">
-            <span class="small tc-muted d-b">Quality (1–100)</span>
-            <input type="number" id="quality" min="1" max="100" />
-          </label>
-
-          <label class="d-b">
-            <span class="small tc-muted d-b">Video frame at (seconds)</span>
-            <input type="number" id="videoFrameSeconds" min="0" max="3600" step="0.5" />
-          </label>
-
-          <label class="d-b">
-            <span class="small tc-muted d-b">Files at once</span>
-            <input type="number" id="concurrency" min="1" max="8" />
-          </label>
-        </div>
-
-        <details class="mb">
-          <summary>ffmpeg location</summary>
+          <h2>Sizes</h2>
           <p class="small tc-muted">
-            Leave both blank to auto-detect: the <code>FFMPEG_PATH</code>/<code>FFPROBE_PATH</code>
-            environment variables, then a bundled <code>ffmpeg-static</code> if one is installed,
-            then whatever is on the server's <code>PATH</code>.
+            One file is generated per size, per source file. <strong>Cover</strong> fills the box
+            exactly and crops the overflow; <strong>contain</strong> fits the whole image inside it
+            and never scales anything up; <strong>pad</strong> does the same and pads out to the full
+            box.
           </p>
-          <div class="d-f" style="gap: var(--spacer);">
-            <label class="d-b flex">
-              <span class="small tc-muted d-b">ffmpeg</span>
-              <input type="text" id="ffmpegPath" placeholder="ffmpeg" />
+          <k-thumbs-size-list id="sizes" class="mb"></k-thumbs-size-list>
+
+          <h2>Where they go</h2>
+          <label class="d-b mb">
+            <span class="small tc-muted d-b">Folder, relative to the file being thumbnailed</span>
+            <input type="text" id="destination" placeholder="thumbs" />
+          </label>
+          <p class="small tc-muted" id="destinationExample"></p>
+
+          <h2>How they are encoded</h2>
+          <div class="d-f mb" style="gap: var(--spacer); align-items: flex-end;">
+            <label class="d-b">
+              <span class="small tc-muted d-b">Format</span>
+              <select id="outputFormat">
+                <option value="webp">WebP — smallest, keeps transparency</option>
+                <option value="jpg">JPEG — widest support, no transparency</option>
+                <option value="png">PNG — lossless, largest</option>
+              </select>
             </label>
-            <label class="d-b flex">
-              <span class="small tc-muted d-b">ffprobe</span>
-              <input type="text" id="ffprobePath" placeholder="ffprobe" />
+
+            <label class="d-b" id="qualityField">
+              <span class="small tc-muted d-b">Quality (1–100)</span>
+              <input type="number" id="quality" min="1" max="100" />
+            </label>
+
+            <label class="d-b">
+              <span class="small tc-muted d-b">Video frame at (seconds)</span>
+              <input type="number" id="videoFrameSeconds" min="0" max="3600" step="0.5" />
+            </label>
+
+            <label class="d-b">
+              <span class="small tc-muted d-b">Files at once</span>
+              <input type="number" id="concurrency" min="1" max="8" />
             </label>
           </div>
-        </details>
 
+          <details class="mb">
+            <summary>ffmpeg location</summary>
+            <p class="small tc-muted">
+              Leave both blank to auto-detect: the <code>FFMPEG_PATH</code>/<code>FFPROBE_PATH</code>
+              environment variables, then a bundled <code>ffmpeg-static</code> if one is installed,
+              then whatever is on the server's <code>PATH</code>.
+            </p>
+            <div class="d-f" style="gap: var(--spacer);">
+              <label class="d-b flex">
+                <span class="small tc-muted d-b">ffmpeg</span>
+                <input type="text" id="ffmpegPath" placeholder="ffmpeg" />
+              </label>
+              <label class="d-b flex">
+                <span class="small tc-muted d-b">ffprobe</span>
+                <input type="text" id="ffprobePath" placeholder="ffprobe" />
+              </label>
+            </div>
+          </details>
+
+          <div class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
+            <button type="submit" class="primary" id="save">Save settings</button>
+            <span class="small tc-muted" id="saveNote"></span>
+          </div>
+        </form>
+      </k-tab-content>
+
+      <k-tab-content id="activityContent" name="activity">
         <div class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
-          <button type="submit" class="primary" id="save">Save settings</button>
-          <span class="small tc-muted" id="saveNote"></span>
+          <select id="statusFilter" style="width: auto;">
+            <option value="">Everything</option>
+            <option value="failed">Failed</option>
+            <option value="pending">Pending</option>
+            <option value="ready">Ready</option>
+            <option value="skipped">Skipped</option>
+          </select>
         </div>
-      </form>
-    </k-permission>
+        <k-table id="activity" placeholder="Nothing has been generated yet."></k-table>
+      </k-tab-content>
+    </k-tabs>
 
-    <k-permission has="thumbs:view">
-      <h2>Recent activity</h2>
-      <div class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
-        <select id="statusFilter" style="width: auto;">
-          <option value="">Everything</option>
-          <option value="failed">Failed</option>
-          <option value="pending">Pending</option>
-          <option value="ready">Ready</option>
-          <option value="skipped">Skipped</option>
-        </select>
-      </div>
-      <k-table id="activity" placeholder="Nothing has been generated yet."></k-table>
-    </k-permission>
+    <!--
+      Neither of these can wrap the <k-tab>/<k-tab-content> pairs the way k-permission normally
+      wraps content: k-tabs finds its tabs with a direct-child query, so any element between
+      <k-tabs> and <k-tab> — including a hidden one — breaks tab selection outright, not just the
+      display. k-permission-target instead reaches in by id and hides the tab and its pane in place,
+      leaving both exactly where <k-tabs> expects to find them.
+
+      This is a courtesy, same as everywhere else in this file: the actual boundary is server-side,
+      on each route.
+    -->
+    <k-permission-target has="thumbs:view" target="#manageTab, #manageContent, #activityTab, #activityContent"></k-permission-target>
+    <k-permission-target has="thumbs:settings" target="#settingsTab, #settingsContent"></k-permission-target>
   </div>
 
   <script type="module">
@@ -129,6 +146,7 @@ locked: true
     } from '/kempo-thumbs/sdk.js';
 
     await customElements.whenDefined('k-table');
+    await customElements.whenDefined('k-tabs');
 
     /*
       These decide which controls are drawn, nothing more. Every one of them is checked again on the
@@ -141,6 +159,26 @@ locked: true
 
     const status = $('status');
     if(status) status.canGenerate = permissions.has('thumbs:generate');
+
+    /*
+      The markup defaults to the Manage tab, and persistent-id can restore whichever tab a
+      returning visitor left open — including one this particular visitor cannot see, if their
+      permissions changed since. The two k-permission-target elements handle hiding a tab's own
+      button and pane; this handles never leaving a hidden one selected, using the same permission
+      set already fetched above rather than a second round trip.
+    */
+    const tabs = $('tabs');
+    if(tabs){
+      const tabVisibility = {
+        manage: permissions.has('thumbs:view'),
+        activity: permissions.has('thumbs:view'),
+        settings: permissions.has('thumbs:settings'),
+      };
+      if(!tabVisibility[tabs.active]){
+        const fallback = Object.keys(tabVisibility).find(name => tabVisibility[name]);
+        if(fallback) tabs.active = fallback;
+      }
+    }
 
     /*
       Settings
