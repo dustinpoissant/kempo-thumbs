@@ -1,0 +1,339 @@
+<!--
+locked: true
+-->
+<page title="Thumbnails - Admin">
+<content>
+  <script type="module" src="/kempo/components/Permission.js"></script>
+  <script type="module" src="/kempo-ui/components/Table.js"></script>
+  <script type="module" src="/kempo-ui/components/Toggle.js"></script>
+  <script type="module" src="/admin/extension/kempo-thumbs/components/Status.js"></script>
+  <script type="module" src="/admin/extension/kempo-thumbs/components/SizeList.js"></script>
+  <script type="module" src="/admin/extension/kempo-thumbs/components/FormatPicker.js"></script>
+
+  <div class="p">
+    <h1>Thumbnails</h1>
+    <p class="tc-muted">
+      Generated automatically from files in the library, with ffmpeg. Images are decoded, videos
+      give up a frame, and audio files contribute their cover art if they carry one.
+    </p>
+
+    <k-permission has="thumbs:view">
+      <k-thumbs-status id="status"></k-thumbs-status>
+    </k-permission>
+
+    <k-permission has="thumbs:settings">
+      <form id="settings" class="mt">
+        <h2>What gets a thumbnail</h2>
+
+        <label class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
+          <k-toggle id="autoGenerate"></k-toggle>
+          <span>
+            Generate automatically on upload
+            <span class="small tc-muted d-b">
+              With this off, thumbnails are only made when asked for from this screen.
+            </span>
+          </span>
+        </label>
+
+        <k-thumbs-format-picker id="formats"></k-thumbs-format-picker>
+
+        <h2>Sizes</h2>
+        <p class="small tc-muted">
+          One file is generated per size, per source file. <strong>Cover</strong> fills the box
+          exactly and crops the overflow; <strong>contain</strong> fits the whole image inside it and
+          never scales anything up; <strong>pad</strong> does the same and pads out to the full box.
+        </p>
+        <k-thumbs-size-list id="sizes"></k-thumbs-size-list>
+
+        <h2>Where they go</h2>
+        <label class="d-b mb">
+          <span class="small tc-muted d-b">Folder, relative to the file being thumbnailed</span>
+          <input type="text" id="destination" placeholder="thumbs" />
+        </label>
+        <p class="small tc-muted" id="destinationExample"></p>
+
+        <h2>How they are encoded</h2>
+        <div class="d-f mb" style="gap: var(--spacer); align-items: flex-end;">
+          <label class="d-b">
+            <span class="small tc-muted d-b">Format</span>
+            <select id="outputFormat">
+              <option value="webp">WebP — smallest, keeps transparency</option>
+              <option value="jpg">JPEG — widest support, no transparency</option>
+              <option value="png">PNG — lossless, largest</option>
+            </select>
+          </label>
+
+          <label class="d-b" id="qualityField">
+            <span class="small tc-muted d-b">Quality (1–100)</span>
+            <input type="number" id="quality" min="1" max="100" />
+          </label>
+
+          <label class="d-b">
+            <span class="small tc-muted d-b">Video frame at (seconds)</span>
+            <input type="number" id="videoFrameSeconds" min="0" max="3600" step="0.5" />
+          </label>
+
+          <label class="d-b">
+            <span class="small tc-muted d-b">Files at once</span>
+            <input type="number" id="concurrency" min="1" max="8" />
+          </label>
+        </div>
+
+        <details class="mb">
+          <summary>ffmpeg location</summary>
+          <p class="small tc-muted">
+            Leave both blank to auto-detect: the <code>FFMPEG_PATH</code>/<code>FFPROBE_PATH</code>
+            environment variables, then a bundled <code>ffmpeg-static</code> if one is installed,
+            then whatever is on the server's <code>PATH</code>.
+          </p>
+          <div class="d-f" style="gap: var(--spacer);">
+            <label class="d-b flex">
+              <span class="small tc-muted d-b">ffmpeg</span>
+              <input type="text" id="ffmpegPath" placeholder="ffmpeg" />
+            </label>
+            <label class="d-b flex">
+              <span class="small tc-muted d-b">ffprobe</span>
+              <input type="text" id="ffprobePath" placeholder="ffprobe" />
+            </label>
+          </div>
+        </details>
+
+        <div class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
+          <button type="submit" class="primary" id="save">Save settings</button>
+          <span class="small tc-muted" id="saveNote"></span>
+        </div>
+      </form>
+    </k-permission>
+
+    <k-permission has="thumbs:view">
+      <h2>Recent activity</h2>
+      <div class="d-f mb" style="gap: var(--spacer_h); align-items: center;">
+        <select id="statusFilter" style="width: auto;">
+          <option value="">Everything</option>
+          <option value="failed">Failed</option>
+          <option value="pending">Pending</option>
+          <option value="ready">Ready</option>
+          <option value="skipped">Skipped</option>
+        </select>
+      </div>
+      <k-table id="activity" placeholder="Nothing has been generated yet."></k-table>
+    </k-permission>
+  </div>
+
+  <script type="module">
+    import Toast from '/kempo-ui/components/Toast.js';
+    import { getAllCurrentUserPermissions } from '/kempo/sdk.js';
+    import {
+      getSettings, saveSettings, listThumbnails,
+      regenerate, sweep, removeOrphans,
+    } from '/kempo-thumbs/sdk.js';
+
+    await customElements.whenDefined('k-table');
+
+    /*
+      These decide which controls are drawn, nothing more. Every one of them is checked again on the
+      route, so a hidden button is a courtesy rather than the boundary.
+    */
+    const [permError, permData] = await getAllCurrentUserPermissions();
+    const permissions = new Set(permError ? [] : (permData?.permissions || []));
+
+    const $ = id => document.getElementById(id);
+
+    const status = $('status');
+    if(status) status.canGenerate = permissions.has('thumbs:generate');
+
+    /*
+      Settings
+    */
+    const form = $('settings');
+    let working = null;
+
+    const showDestinationExample = () => {
+      const destination = ($('destination').value || '').replace(/^[\\/]+|[\\/]+$/g, '');
+      const label = working?.sizes?.[0]?.label || 'sm';
+      const format = $('outputFormat').value;
+      $('destinationExample').textContent = destination
+        ? `products/hero.jpg → products/${destination}/hero-${label}.${format}`
+        : `products/hero.jpg → products/hero-${label}.${format} (alongside the original)`;
+    };
+
+    const applyToForm = settings => {
+      working = settings;
+
+      $('autoGenerate').value = settings.autoGenerate;
+      $('formats').formats = settings.formats;
+      $('sizes').sizes = settings.sizes;
+      $('sizes').outputFormat = settings.outputFormat;
+      $('destination').value = settings.destination;
+      $('outputFormat').value = settings.outputFormat;
+      $('quality').value = settings.quality;
+      $('videoFrameSeconds').value = settings.videoFrameSeconds;
+      $('concurrency').value = settings.concurrency;
+      $('ffmpegPath').value = settings.ffmpegPath;
+      $('ffprobePath').value = settings.ffprobePath;
+
+      // PNG is lossless, so the number would do nothing — hiding it beats explaining it.
+      $('qualityField').style.display = settings.outputFormat === 'png' ? 'none' : '';
+      showDestinationExample();
+    };
+
+    if(form){
+      const [error, data] = await getSettings();
+      if(error){
+        Toast.error(error.msg || 'Could not load the thumbnail settings');
+      } else {
+        applyToForm(data.settings);
+      }
+
+      $('formats').addEventListener('change', e => { working.formats = e.detail.formats; });
+      $('sizes').addEventListener('change', e => {
+        working.sizes = e.detail.sizes;
+        showDestinationExample();
+      });
+      $('destination').addEventListener('input', showDestinationExample);
+      $('outputFormat').addEventListener('change', () => {
+        $('sizes').outputFormat = $('outputFormat').value;
+        $('qualityField').style.display = $('outputFormat').value === 'png' ? 'none' : '';
+        showDestinationExample();
+      });
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        $('save').disabled = true;
+        $('saveNote').textContent = '';
+
+        const [saveError, saved] = await saveSettings({
+          auto_generate: $('autoGenerate').value,
+          formats: working.formats,
+          sizes: working.sizes,
+          destination: $('destination').value,
+          output_format: $('outputFormat').value,
+          quality: Number($('quality').value),
+          video_frame_seconds: Number($('videoFrameSeconds').value),
+          concurrency: Number($('concurrency').value),
+          ffmpeg_path: $('ffmpegPath').value,
+          ffprobe_path: $('ffprobePath').value,
+        });
+
+        $('save').disabled = false;
+
+        if(saveError){
+          Toast.error(saveError.msg || 'Could not save');
+          return;
+        }
+
+        /*
+          Re-rendered from what came back rather than from what was typed, so a value the server
+          tidied up (a trailing slash, a size it dropped) is visible immediately instead of on the
+          next page load.
+        */
+        applyToForm(saved.settings);
+        Toast.success('Saved');
+        $('saveNote').textContent = 'Existing thumbnails are unchanged — use "Regenerate everything" to rebuild them.';
+      });
+    }
+
+    /*
+      Bulk actions, from the status component
+    */
+    const runSweep = force => async () => {
+      const [error, result] = await sweep({ force });
+      if(error) return Toast.error(error.msg || 'Could not start');
+      Toast.success(`Queued ${result.queued} file${result.queued === 1 ? '' : 's'} out of ${result.scanned} scanned`);
+      loadActivity();
+    };
+
+    status?.addEventListener('generate-missing', runSweep(false));
+    status?.addEventListener('regenerate-all', runSweep(true));
+    status?.addEventListener('clean-orphans', async () => {
+      const [error, result] = await removeOrphans();
+      if(error) return Toast.error(error.msg || 'Could not clean up');
+      Toast.success(`Removed ${result.removed} orphaned thumbnail${result.removed === 1 ? '' : 's'}`);
+      loadActivity();
+    });
+
+    /*
+      Activity table
+    */
+    const activity = $('activity');
+
+    const STATUS_LABEL = {
+      ready: 'Ready',
+      pending: 'Pending',
+      failed: 'Failed',
+      skipped: 'Skipped',
+    };
+
+    if(activity){
+      activity.fields = [
+        {
+          name: 'preview', label: '', size: 60, editable: false,
+          calculator: record => {
+            if(record.status !== 'ready' || !record.url) return '';
+            const image = document.createElement('img');
+            image.src = record.url;
+            image.alt = '';
+            image.loading = 'lazy';
+            // Inline, not a class: this renders inside k-table's shadow root, which the page's CSS
+            // does not reach.
+            image.style.cssText = 'width:2.5rem;height:2.5rem;object-fit:contain;display:block';
+            return image;
+          },
+        },
+        { name: 'sourceName', label: 'Source file', size: 220, editable: false },
+        { name: 'label', label: 'Size', size: 80, editable: false },
+        {
+          name: 'dimensions', label: 'Result', size: 120, editable: false,
+          calculator: record => (record.width && record.height ? `${record.width}×${record.height}` : '—'),
+        },
+        {
+          name: 'status', label: 'Status', size: 100, editable: false,
+          formatter: value => STATUS_LABEL[value] || value,
+        },
+        { name: 'error', label: 'Detail', size: 360, editable: false, formatter: value => value || '' },
+        {
+          name: 'updatedAt', label: 'Updated', size: 180, editable: false,
+          formatter: value => new Date(value).toLocaleString(),
+        },
+      ];
+
+      /*
+        A per-row action rather than a click handler on the row: k-table has no row-click event, and
+        a whole row that silently re-encodes a file when clicked would be a surprising thing for a
+        table to do anyway.
+      */
+      if(permissions.has('thumbs:generate')){
+        activity.fields.push({
+          name: 'regenerate', label: '', size: 130, editable: false,
+          calculator: record => {
+            const button = document.createElement('button');
+            button.className = 'small';
+            button.textContent = 'Regenerate';
+            button.addEventListener('click', async () => {
+              button.disabled = true;
+              const [error] = await regenerate(record.sourceFileId, { force: true });
+              button.disabled = false;
+              if(error) return Toast.error(error.msg || 'Could not queue');
+              Toast.success('Queued for regeneration');
+            });
+            return button;
+          },
+        });
+      }
+    }
+
+    async function loadActivity(){
+      if(!activity) return;
+      const [error, data] = await listThumbnails({ status: $('statusFilter').value, limit: 100 });
+      if(error){
+        Toast.error(error.msg || 'Could not load recent activity');
+        return;
+      }
+      activity.records = data.thumbnails;
+    }
+
+    $('statusFilter')?.addEventListener('change', loadActivity);
+    await loadActivity();
+  </script>
+</content>
+</page>

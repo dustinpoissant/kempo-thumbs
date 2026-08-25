@@ -1,0 +1,46 @@
+{
+  "name": "kempo-thumbs",
+  "version": "0.1.0",
+  "description": "Automatic thumbnail generation for kempo-files — ffmpeg-backed, for images, video and audio",
+  "license": "MIT",
+  "author": "Dustin Poissant",
+  "type": "module",
+  "main": "sdk.js",
+  "scripts": {
+    "test": "kempo-test -l minimal",
+    "link:local": "npm install ../kempo ../kempo-files ../kempo-server ../kempo-ui --no-save --no-legacy-peer-deps --force"
+  },
+  "kempo": {
+    "public-scope": "kempo-thumbs"
+  },
+  "exports": {
+    "./install": "./install.js",
+    "./update": "./update.js",
+    "./uninstall": "./uninstall.js",
+    "./sdk": "./sdk.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dustinpoissant/kempo-thumbs.git"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  },
+  "peerDependencies": {
+    "kempo": ">=4.2.35",
+    "kempo-files": ">=0.1.3",
+    "kempo-server": ">=3.3.0",
+    "kempo-ui": ">=0.4.53"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "kempo-testing-framework": "^1.4.11",
+    "postgres": "^3.4.9"
+  },
+  "allowScripts": {
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "puppeteer@25.7.0": true
+  }
+}

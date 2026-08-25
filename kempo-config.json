@@ -1,0 +1,89 @@
+{
+  "docs": "https://github.com/dustinpoissant/kempo-thumbs#readme",
+  "git": "https://github.com/dustinpoissant/kempo-thumbs",
+  "public-scope": "kempo-thumbs",
+  "schema": "./server/db/schema.js",
+  "dependencies": ["kempo-files"],
+  "hooks": {
+    "file:uploaded": "./hooks/file-uploaded.js",
+    "file:deleted": "./hooks/file-deleted.js",
+    "file:before_download": "./hooks/file-before-download.js"
+  },
+  "permissions": [
+    { "name": "thumbs:view", "description": "See which files have thumbnails, and why any of them failed" },
+    { "name": "thumbs:generate", "description": "Generate or regenerate thumbnails, and delete generated ones" },
+    { "name": "thumbs:settings", "description": "Change which formats, sizes and destination thumbnails are generated with" }
+  ],
+  "settings": [
+    {
+      "name": "auto_generate",
+      "value": "true",
+      "type": "boolean",
+      "description": "Generate thumbnails automatically when a file is uploaded or its contents replaced"
+    },
+    {
+      "name": "formats",
+      "value": "[\"png\",\"jpg\",\"jpeg\",\"gif\",\"webp\",\"avif\",\"bmp\",\"tif\",\"tiff\",\"mp4\",\"m4v\",\"webm\",\"mov\",\"mkv\",\"avi\",\"mp3\",\"m4a\",\"flac\",\"ogg\",\"opus\"]",
+      "type": "json",
+      "description": "File extensions that get thumbnails generated for them"
+    },
+    {
+      "name": "sizes",
+      "value": "[{\"label\":\"sm\",\"width\":320,\"height\":320,\"fit\":\"cover\"},{\"label\":\"md\",\"width\":1024,\"height\":1024,\"fit\":\"contain\"}]",
+      "type": "json",
+      "description": "The thumbnail sizes to generate for every eligible file"
+    },
+    {
+      "name": "destination",
+      "value": "thumbs",
+      "type": "string",
+      "description": "Where thumbnails are written, relative to the folder the source file is in. Blank writes them alongside the original"
+    },
+    {
+      "name": "output_format",
+      "value": "webp",
+      "type": "string",
+      "description": "The image format thumbnails are encoded as: webp, jpg or png"
+    },
+    {
+      "name": "quality",
+      "value": "82",
+      "type": "number",
+      "description": "Encoder quality, 1-100. Ignored for png, which is always lossless"
+    },
+    {
+      "name": "video_frame_seconds",
+      "value": "1",
+      "type": "number",
+      "description": "How far into a video the captured frame is taken from, in seconds"
+    },
+    {
+      "name": "concurrency",
+      "value": "2",
+      "type": "number",
+      "description": "How many files may be processed at once. Each one runs an ffmpeg process per size"
+    },
+    {
+      "name": "ffmpeg_path",
+      "value": "",
+      "type": "string",
+      "description": "Path to the ffmpeg binary. Blank auto-detects: FFMPEG_PATH, then the bundled ffmpeg-static, then ffmpeg on PATH"
+    },
+    {
+      "name": "ffprobe_path",
+      "value": "",
+      "type": "string",
+      "description": "Path to the ffprobe binary. Blank auto-detects: FFPROBE_PATH, then the bundled ffprobe-static, then ffprobe on PATH"
+    }
+  ],
+  "groups": [
+    {
+      "name": "kempo-thumbs:operator",
+      "description": "Can see thumbnail status and regenerate thumbnails, but not change the settings they are generated with",
+      "permissions": [
+        "thumbs:view",
+        "thumbs:generate"
+      ]
+    }
+  ]
+}

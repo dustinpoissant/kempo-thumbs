@@ -1,0 +1,16 @@
+node_modules
+.vscode
+.env
+.env.production
+*.log
+tests/.tmp-*
+
+# The data-layer suite installs this extension against a real library, so kempo-files' own
+# install.js mkdir(cwd/files) lands here rather than in a real site — harmless, but not something
+# this repo should ever track.
+/files/
+
+# Junctions the browser-test fixtures create so absolute /kempo-ui/... imports resolve against
+# kempo-testing-framework's static file server. Links, not content.
+/kempo-ui
+/kempo-thumbs
