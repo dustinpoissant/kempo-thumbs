@@ -55,6 +55,10 @@ Then enable it from the admin's Extensions screen. `kempo-files` has to be insta
 first — it is declared as a dependency, so kempo refuses the install until it is, and refuses to
 disable or uninstall kempo-files while this is still enabled.
 
+Needs `kempo >= 4.2.37`, `kempo-files >= 0.1.3` and `kempo-server >= 3.3.0`. Below the first of
+those, the `sizes` and `formats` settings are stored double-encoded and the generator sees nothing
+configured.
+
 ### ffmpeg
 
 ffmpeg and ffprobe have to be reachable from the server process. They are looked for in this order:

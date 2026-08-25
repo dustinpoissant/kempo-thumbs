@@ -89,7 +89,9 @@ images, video frames and embedded audio cover art rather than three libraries.
 
 - `kempo-files >= 0.1.3` for the `file:deleted` hook (added alongside this release). Without it
   thumbnails outlive their sources until *Clean up orphans* is run.
-- `kempo >= 4.2.35` for extension dependency declarations, so this cannot be enabled without
-  kempo-files.
+- `kempo >= 4.2.37` for the json-settings fix. Below that, this extension's `sizes` and `formats`
+  are stored double-encoded on install and read back as JSON text, so the generator sees no
+  configured sizes and silently produces nothing. 4.2.35 is enough for the dependency declaration
+  itself, but not for the extension to actually work.
 - **ffmpeg** on the server. `ffprobe` is optional — thumbnails are still generated without it, but
   their dimensions are not recorded, which means no `srcset`.
