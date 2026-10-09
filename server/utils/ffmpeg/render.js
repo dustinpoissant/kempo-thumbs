@@ -104,3 +104,19 @@ export const probeDimensions = async (ffprobe, path) => {
     return { width: null, height: null };
   }
 };
+
+/*
+  True only when ffprobe ran and found the file has no picture stream. Audio with no cover art is the
+  one failure that is not a failure, and the words ffmpeg uses for it differ by version and build (some
+  say the output has no stream, others only "Invalid argument"), so asking the file is more reliable
+  than matching the message. Any doubt, a missing ffprobe included, answers false.
+*/
+export const hasNoPictureStream = async (ffprobe, path) => {
+  const [error, result] = await run(ffprobe, ['-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=index', '-of', 'json', path], { timeout: 15_000 });
+  if(error) return false;
+  try {
+    return JSON.parse(result.stdout).streams.length === 0;
+  } catch {
+    return false;
+  }
+};

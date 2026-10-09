@@ -5,7 +5,7 @@ import { getFile, filePath, kindForName, extensionOf } from 'kempo-files/sdk';
 import { kempoThumbnail } from '../../db/schema.js';
 import { readConfig } from '../config/settings.js';
 import { resolveFfmpeg, resolveFfprobe } from '../ffmpeg/binaries.js';
-import { renderThumbnail } from '../ffmpeg/render.js';
+import { renderThumbnail, hasNoPictureStream } from '../ffmpeg/render.js';
 import { thumbName, looksGenerated } from '../names/thumbName.js';
 import { writeThumbnail } from './store.js';
 import { resolveDestination } from './destination.js';
@@ -173,7 +173,7 @@ export const generateForFile = async ({ fileId, force = false, config: given = n
     });
 
     if(renderError){
-      const status = classify(renderError.msg, kind);
+      const status = kind === 'audio' && await hasNoPictureStream(ffprobe, sourcePath) ? 'skipped' : classify(renderError.msg, kind);
       await upsertRow({
         sourceFileId: fileId,
         label: size.label,

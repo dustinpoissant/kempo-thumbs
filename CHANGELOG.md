@@ -6,6 +6,14 @@ All notable changes to `kempo-thumbs` are documented in this file.
 
 ### Added
 
+- **Failure notifications** through kempo's notification system. When a thumbnail fails, holders of `thumbs:generate` get one rolled-up notification (refreshed and re-opened as more fail, closed when nothing is failing) naming the latest file and the reason, with a **Try again** action that calls the existing `POST /kempo-thumbs/api/thumbnails` sweep route as the signed-in user. `skipped` never notifies. **Requires the kempo release that adds notifications**; on an older kempo the integration is off and nothing else changes (feature-detected at runtime, no hard import).
+
+### Fixed
+
+- Audio with no cover art is classified `skipped` by asking ffprobe for a picture stream instead of matching ffmpeg's message, which on some builds is only `Error opening output files: Invalid argument` and was recorded as `failed`.
+
+### Initial release
+
 First release. Automatic thumbnail generation for `kempo-files`, backed by ffmpeg — one tool covering
 images, video frames and embedded audio cover art rather than three libraries.
 

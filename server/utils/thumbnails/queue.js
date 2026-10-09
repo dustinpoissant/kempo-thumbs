@@ -1,5 +1,6 @@
 import { readConfig } from '../config/settings.js';
 import { generateForFile } from './generate.js';
+import { hasFailedRows, syncFailureNotification } from '../notifications/failures.js';
 
 /*
   A bounded work queue, in process.
@@ -47,7 +48,9 @@ const pump = async () => {
 
 const runJob = async (job, config) => {
   try {
-    const [error] = await generateForFile({ fileId: job.fileId, force: job.force, config });
+    const hadFailed = await hasFailedRows({ fileId: job.fileId }).catch(() => false);
+    const [error, summary] = await generateForFile({ fileId: job.fileId, force: job.force, config });
+    await syncFailureNotification({ fileId: job.fileId, results: summary?.results, hadFailed });
     if(error){
       failed++;
       console.error(`[kempo-thumbs] ${job.fileId}: ${error.msg}`);

@@ -184,6 +184,14 @@ that are not true.
 The distinction between `failed` and `skipped` is the difference between a screen full of red rows
 demanding attention and one correctly saying most music files do not have artwork.
 
+## Failure notifications
+
+When a thumbnail **fails**, everyone who holds `thumbs:generate` (through a group, and every administrator) gets a kempo notification: a bell in the admin, with the file and the reason. `skipped` never notifies.
+
+It is one notification for all failures, not one per file, because a broken ffmpeg or a bad batch fails hundreds of files at once. It is refreshed, and re-opened if it had been read, each time another thumbnail fails; it names the latest file and says how many others are failing; and it is closed automatically once nothing is failing any more. Its **Try again** button calls the existing `POST /kempo-thumbs/api/thumbnails` route with `{ sweep: true }`, as the person who clicked it, so the route's own `thumbs:generate` check applies. That re-queues every failed or missing thumbnail. A **View status** link opens the admin screen.
+
+**Needs a kempo release that includes notifications.** On an older kempo this is simply off: the extension checks for `createNotification` at runtime rather than importing it, and everything else works unchanged. Audio with no embedded cover art is now recognised by asking ffprobe whether the file has a picture stream at all, rather than by matching ffmpeg's wording, which differs by build; some builds reported it as a failure, and a failure now means somebody gets told.
+
 ---
 
 ## The queue
