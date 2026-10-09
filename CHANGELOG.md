@@ -6,7 +6,7 @@ All notable changes to `kempo-thumbs` are documented in this file.
 
 ### Added
 
-- **Failure notifications** through kempo's notification system. When a thumbnail fails, holders of `thumbs:generate` get one rolled-up notification (refreshed and re-opened as more fail, closed when nothing is failing) naming the latest file and the reason, with a **Try again** action that calls the existing `POST /kempo-thumbs/api/thumbnails` sweep route as the signed-in user. `skipped` never notifies. **Requires the kempo release that adds notifications**; on an older kempo the integration is off and nothing else changes (feature-detected at runtime, no hard import).
+- **Failure notifications** through kempo's notification system. When a thumbnail fails, holders of `thumbs:generate` get one rolled-up notification (refreshed and re-opened as more fail, closed when nothing is failing) naming the latest file and the reason, with a **Try again** action that calls the existing `POST /kempo-thumbs/api/thumbnails` sweep route as the signed-in user. `skipped` never notifies. **Requires `kempo >= 4.5.0`, the release that adds notifications**; on an older kempo the integration is off and nothing else changes (feature-detected at runtime, no hard import).
 
 ### Fixed
 
