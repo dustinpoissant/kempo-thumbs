@@ -6,6 +6,7 @@ All notable changes to `kempo-thumbs` are documented in this file.
 
 ### Added
 
+- **Dashboard widget.** A **Thumbnails** widget on the kempo admin dashboard showing how many thumbnails are ready, pending, failed and working, with a **Generate missing** button, declared in `widgets` in `kempo-config.json`. Needs a kempo with the dashboard; ignored on older versions.
 - **Failure notifications** through kempo's notification system. When a thumbnail fails, holders of `thumbs:generate` get one rolled-up notification (refreshed and re-opened as more fail, closed when nothing is failing) naming the latest file and the reason, with a **Try again** action that calls the existing `POST /kempo-thumbs/api/thumbnails` sweep route as the signed-in user. `skipped` never notifies. **Requires `kempo >= 4.5.0`, the release that adds notifications**; on an older kempo the integration is off and nothing else changes (feature-detected at runtime, no hard import).
 
 ### Fixed

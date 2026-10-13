@@ -9,6 +9,21 @@
     "file:deleted": "./hooks/file-deleted.js",
     "file:before_download": "./hooks/file-before-download.js"
   },
+  "widgets": [
+    {
+      "key": "status",
+      "title": "Thumbnails",
+      "description": "How many thumbnails are ready, waiting or failed.",
+      "icon": "image",
+      "element": "k-thumbs-widget",
+      "module": "/kempo-thumbs/components/ThumbsWidget.js",
+      "defaultWidth": 2,
+      "defaultHeight": 1,
+      "minWidth": 1,
+      "permission": "thumbs:view",
+      "priority": 71
+    }
+  ],
   "permissions": [
     { "name": "thumbs:view", "description": "See which files have thumbnails, and why any of them failed" },
     { "name": "thumbs:generate", "description": "Generate or regenerate thumbnails, and delete generated ones" },
