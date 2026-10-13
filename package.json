@@ -11,9 +11,6 @@
     "test:integration": "node scripts/run-tests.js integration kempo-test -l minimal",
     "link:local": "npm install ../kempo ../kempo-files ../kempo-server ../kempo-ui --no-save --no-legacy-peer-deps --force"
   },
-  "kempo": {
-    "public-scope": "kempo-thumbs"
-  },
   "exports": {
     "./uninstall": "./uninstall.js",
     "./sdk": "./sdk.js"
@@ -28,7 +25,7 @@
     "ffmpeg-static": "^5.3.0"
   },
   "peerDependencies": {
-    "kempo": ">=4.2.39",
+    "kempo": ">=4.5.8",
     "kempo-files": ">=0.1.3",
     "kempo-server": ">=3.3.0",
     "kempo-ui": ">=0.4.53"
