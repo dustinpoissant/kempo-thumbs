@@ -3,7 +3,7 @@
   "version": "0.1.12",
   "description": "Automatic thumbnail generation for kempo-files — ffmpeg-backed, for images, video and audio",
   "license": "MIT",
-  "author": "Dustin Poissant",
+  "author": "Dustin Poissant <dustinpoissant@gmail.com>",
   "type": "module",
   "main": "sdk.js",
   "scripts": {
