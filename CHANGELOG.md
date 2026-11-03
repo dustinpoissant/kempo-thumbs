@@ -133,3 +133,8 @@ images, video frames and embedded audio cover art rather than three libraries.
   the extension to actually work.
 - Nothing to install for ffmpeg itself — `ffmpeg-static` and `@ffprobe-installer/ffprobe` ship as
   dependencies and fetch the right binary for the server's own platform at `npm install` time.
+
+### Changed
+
+- The `kempo-ui` peer dependency is now `>=1.0.0`.
+- The `kempo` peer dependency is now `>=4.10.2`.
