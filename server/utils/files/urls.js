@@ -11,4 +11,9 @@ export { getFile } from 'kempo-files/sdk';
   An aliased file gets its bare path; everything else its canonical id URL. Both run the identical
   permission gate on the way out, so the choice only affects how the link reads.
 */
-export const urlForFileRow = file => (file?.alias ? `/${file.alias}` : `/kempo-files/api/files/${file.id}`);
+const extensionOf = file => {
+  const match = /\.([a-z0-9]{1,10})$/i.exec(file?.name ?? '');
+  return match ? `.${match[1].toLowerCase()}` : '';
+};
+
+export const urlForFileRow = file => (file?.alias ? `/${file.alias}` : `/kempo-files/api/files/${file.id}${extensionOf(file)}`);

@@ -4,8 +4,13 @@ All notable changes to `kempo-thumbs` are documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-09
+
+Requires kempo 4.11.0 or later.
+
 ### Added
 
+- **Thumbnail addresses end with their extension**, like the files they belong to (see kempo-files).
 - The Thumbnails admin page has a `thumbs-admin-tabs` location after its tabs, so an extension can add a tab there.
 
 - **Dashboard widget.** A **Thumbnails** widget on the kempo admin dashboard showing how many thumbnails are ready, pending, failed and working, with a **Generate missing** button, declared in `widgets` in `kempo-config.json`. Needs a kempo with the dashboard; ignored on older versions.
@@ -137,4 +142,4 @@ images, video frames and embedded audio cover art rather than three libraries.
 ### Changed
 
 - The `kempo-ui` peer dependency is now `>=1.0.0`.
-- The `kempo` peer dependency is now `>=4.10.2`.
+- The `kempo` peer dependency is now `>=4.11.0`.
