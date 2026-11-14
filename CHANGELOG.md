@@ -4,6 +4,12 @@ All notable changes to `kempo-thumbs` are documented in this file.
 
 ## [Unreleased]
 
+Requires kempo 4.15.0 or later. The extension no longer checks at runtime whether kempo has notifications.
+
+### Added
+
+- Thumbnail failures are now a `notice` with the `error` subtype, and recovery acknowledges it, using kempo's notification types.
+
 ## [0.2.0] - 2026-11-09
 
 Requires kempo 4.11.0 or later.

@@ -1,20 +1,17 @@
 import { and, desc, eq } from 'drizzle-orm';
 import db from 'kempo/server/db/index.js';
+import { createNotification, markAcknowledged } from 'kempo/server/sdk.js';
 import { getFile } from 'kempo-files/sdk';
 import { kempoThumbnail } from '../../db/schema.js';
 
 /*
-  Tells the people who can regenerate thumbnails when one failed, using kempo's notifications.
-
-  Notifications arrived in a later kempo than this extension supports as a minimum, so nothing here is
-  imported at load: `loadCore` asks the installed kempo whether it has them and answers null when it does
-  not, and every function below then does nothing. That is what keeps this extension working on an older
-  kempo, and why `kempo/server/sdk.js` is imported dynamically and checked rather than named in an import.
+  Tells the people who can regenerate thumbnails when one failed, using kempo's notifications (a `notice`: it waits
+  in the bell and the history until someone looks, and does not interrupt whatever they are doing).
 
   One notification covers every failure, not one per file. A broken ffmpeg or a bad batch fails hundreds
   of files at once, and a notification each would bury the person it was meant to help. It is refreshed
-  (and re-opened if it had been read) each time another thumbnail fails, names the latest file and the
-  reason, says how many other files are failing, and is closed once nothing is failing any more. Its
+  (and re-opened if it had been viewed) each time another thumbnail fails, names the latest file and the
+  reason, says how many other files are failing, and is acknowledged once nothing is failing any more. Its
   action re-queues every failed or missing thumbnail, through the same permission-checked route the admin
   screen uses.
 
@@ -27,16 +24,7 @@ const PERMISSION = 'thumbs:generate';
 const RETRY_URL = '/kempo-thumbs/api/thumbnails';
 const ADMIN_URL = '/admin/extension/kempo-thumbs/';
 
-let corePromise = null;
-
 const clip = (text, max) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
-
-export const loadCore = () => {
-  corePromise ||= import('kempo/server/sdk.js')
-    .then(sdk => (typeof sdk.createNotification === 'function' && typeof sdk.markHandled === 'function' ? sdk : null))
-    .catch(() => null);
-  return corePromise;
-};
 
 /* Whether this file has a failed row right now, read before a run so recovery can be recognised after it */
 export const hasFailedRows = async ({ fileId }) => {
@@ -49,14 +37,11 @@ export const hasFailedRows = async ({ fileId }) => {
 
 /*
   Call after a file has been processed. `results` is what generateForFile reported for it, `hadFailed`
-  is what hasFailedRows said before the run, and `core` is only for tests that stand in for an older
-  kempo. Never throws: a notification problem must not turn into a thumbnail problem.
+  is what hasFailedRows said before the run, and `core` lets a test stand in for kempo's notification
+  functions. Never throws: a notification problem must not turn into a thumbnail problem.
 */
-export const syncFailureNotification = async ({ fileId, results = [], hadFailed = false, core }) => {
+export const syncFailureNotification = async ({ fileId, results = [], hadFailed = false, core = { createNotification, markAcknowledged } }) => {
   try {
-    const sdk = core === undefined ? await loadCore() : core;
-    if(!sdk) return;
-
     const failedNow = results.some(result => result.status === 'failed');
     if(!failedNow && !hadFailed) return;
 
@@ -66,7 +51,7 @@ export const syncFailureNotification = async ({ fileId, results = [], hadFailed 
       .orderBy(desc(kempoThumbnail.updatedAt));
 
     if(!failedNow){
-      if(!failures.length) await sdk.markHandled({ owner: OWNER, dedupeKey: DEDUPE_KEY });
+      if(!failures.length) await core.markAcknowledged({ owner: OWNER, dedupeKey: DEDUPE_KEY });
       return;
     }
 
@@ -76,11 +61,12 @@ export const syncFailureNotification = async ({ fileId, results = [], hadFailed 
     const name = clip(file?.name || fileId, 120);
     const reason = clip(mine[0]?.error || 'it could not be generated', 500);
 
-    const [error] = await sdk.createNotification({
+    const [error] = await core.createNotification({
       owner: OWNER,
+      type: 'notice',
+      subtype: 'error',
       title: others ? `Thumbnails failed for ${others + 1} files` : `Thumbnail failed: ${name}`,
       message: `${name} (${mine.map(row => row.label).join(', ')}): ${reason}${others ? ` ${others} other ${others === 1 ? 'file is' : 'files are'} also failing.` : ''}`,
-      level: 'error',
       permission: PERMISSION,
       dedupeKey: DEDUPE_KEY,
       actions: [

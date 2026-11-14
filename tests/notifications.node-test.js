@@ -3,7 +3,7 @@ import path from 'path';
 import { sql, eq } from 'drizzle-orm';
 import db from 'kempo/server/db/index.js';
 import { user, userGroup, group, groupPermission, permission, notification } from 'kempo/server/db/schema.js';
-import { createUser, addUserToGroup, getNotifications, markRead, deleteUser } from 'kempo/server/sdk.js';
+import { createUser, addUserToGroup, getNotifications, markViewed, deleteUser } from 'kempo/server/sdk.js';
 import { storeUpload, deleteFile, listFiles, getFile, filePath, FILES_ROOT } from 'kempo-files/sdk';
 import { kempoThumbnail } from '../server/db/schema.js';
 import { enqueue, queueStatus } from '../server/utils/thumbnails/queue.js';
@@ -123,7 +123,7 @@ const tests = {
 
     const rows = await notificationRows();
     expect(rows.length === 1, `expected one notification, got ${rows.length}`);
-    expect(rows[0].level === 'error' && rows[0].title.includes('zz-notify-broken.png'), `the title should name the file, got ${rows[0].title}`);
+    expect(rows[0].type === 'notice' && rows[0].subtype === 'error' && rows[0].title.includes('zz-notify-broken.png'), `the title should name the file, got ${rows[0].title}`);
     expect(rows[0].message.includes('zz-notify-broken.png') && rows[0].message.length > 'zz-notify-broken.png (sm): '.length, `the message should name the file and carry a reason, got ${rows[0].message}`);
 
     const retry = rows[0].actions.find(action => action.api);
@@ -137,7 +137,7 @@ const tests = {
 
   'more failures refresh the same notification and re-open it instead of adding more': async ({ pass }) => {
     const [first] = await notificationRows();
-    expect(!(await markRead({ userId: state.ids.operator, notificationId: first.id }))[0], 'could not read the notification');
+    expect(!(await markViewed({ userId: state.ids.operator, notificationId: first.id }))[0], 'could not mark the notification viewed');
 
     const second = await upload('broken-too.png', Buffer.from('also not an image'));
     await process_(second.id);
@@ -146,7 +146,7 @@ const tests = {
     expect(rows.length === 1 && rows[0].id === first.id, `still one notification, got ${rows.length}`);
     expect(rows[0].title.includes('2 files') && rows[0].message.includes('1 other file is also failing'), `it should now say two files are failing, got ${rows[0].title} / ${rows[0].message}`);
     const mine = (await listFor(state.ids.operator))[0];
-    expect(mine.readAt === null, 'a read one is re-opened for the new failure');
+    expect(mine.viewedAt === null, 'a viewed one is re-opened for the new failure');
     pass();
   },
 
@@ -168,7 +168,7 @@ const tests = {
     const broken = await upload('fixable.png', Buffer.from('not an image yet'));
     await process_(broken.id);
     expect((await notificationRows()).length === 1, 'the failure was reported');
-    expect((await listFor(state.ids.operator))[0].handledAt === null, 'and is open');
+    expect((await listFor(state.ids.operator))[0].acknowledgedAt === null, 'and is open');
 
     const [, file] = await getFile(broken.id);
     const [, location] = await filePath(file);
@@ -178,7 +178,7 @@ const tests = {
     const [thumbnail] = await db.select().from(kempoThumbnail).where(eq(kempoThumbnail.sourceFileId, broken.id));
     expect(thumbnail.status === 'ready', `the retry should have worked, got ${thumbnail.status}: ${thumbnail.error}`);
     const mine = (await listFor(state.ids.operator))[0];
-    expect(mine.handledAt instanceof Date && mine.readAt instanceof Date, 'recovering closes it');
+    expect(mine.acknowledgedAt && mine.viewedAt, 'recovering closes it');
     pass();
   },
 
@@ -195,16 +195,13 @@ const tests = {
     await writeFile(location, await goodPng());
     await process_(fixable.id, { force: true });
 
-    expect((await listFor(state.ids.operator))[0].handledAt === null, 'one file is still failing, so there is still something to do');
+    expect((await listFor(state.ids.operator))[0].acknowledgedAt === null, 'one file is still failing, so there is still something to do');
     pass();
   },
 
-  'on a kempo without notifications nothing happens and nothing throws': async ({ pass }) => {
+  'a notification that cannot be raised never throws': async ({ pass }) => {
     await db.delete(notification).where(eq(notification.owner, 'kempo-thumbs'));
-    await syncFailureNotification({ fileId: 'whatever', results: [{ label: 'sm', status: 'failed', error: 'boom' }], core: null });
-    expect((await notificationRows()).length === 0, 'a null core is a no-op');
-
-    const throwing = { createNotification: async () => { throw new Error('core exploded'); }, markHandled: async () => {} };
+    const throwing = { createNotification: async () => { throw new Error('core exploded'); }, markAcknowledged: async () => {} };
     const original = console.error;
     console.error = () => {};
     try {
